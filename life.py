@@ -2,7 +2,7 @@
 """life: plain-text lists in a git repository, from the terminal, a phone or a bot.
 
 Works on a "life" data repository laid out as described in FORMAT.md. Standard
-library only; Python 3.9+.
+library only; Python 3.10+.
 
 Commands (run inside the data repo, or pass --dir):
     add TEXT [--to inbox|todo|shopping|quote]   capture something (default: inbox)
