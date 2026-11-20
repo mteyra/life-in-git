@@ -58,7 +58,7 @@ life.py profile README            update the profile snippet
 life.py ingest --labels L --title T [--body B]   (used by the Action)
 ```
 
-Standard library only, Python 3.9 or newer. Times are Europe/Berlin unless `LIFE_TZ` says otherwise. Run the tests with `python3 -m unittest discover -s tests`.
+Standard library only, Python 3.10 or newer (CI tests 3.10 and 3.13). Times are Europe/Berlin unless `LIFE_TZ` says otherwise. Run the tests with `python3 -m unittest discover -s tests`.
 
 ## Limits worth knowing
 

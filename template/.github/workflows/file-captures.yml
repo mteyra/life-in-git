@@ -1,0 +1,56 @@
+name: File captures
+
+# Files each phone capture (an issue opened by the repository owner) into the
+# right list with life.py from the public engine, then closes the issue.
+# Labels and file formats: https://github.com/mteyra/life-in-git/blob/main/FORMAT.md
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: life-writes
+  cancel-in-progress: false
+
+jobs:
+  file:
+    if: github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: mteyra/life-in-git
+          path: .engine
+      - name: File the capture
+        id: file
+        env:
+          TITLE: ${{ github.event.issue.title }}
+          BODY: ${{ github.event.issue.body }}
+          LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
+          WHEN: ${{ github.event.issue.created_at }}
+        run: |
+          # Commit as yourself so captures count as your own commits.
+          git config user.name "YOUR NAME"
+          git config user.email "ID+USERNAME@users.noreply.github.com"
+          if python3 .engine/life.py --dir . --git --when "$WHEN" ingest --labels "$LABELS" --title "$TITLE" --body "$BODY" > "$RUNNER_TEMP/result.txt" 2>&1; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+          cat "$RUNNER_TEMP/result.txt"
+      - name: Close the issue, or say why not
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+          OK: ${{ steps.file.outputs.ok }}
+        run: |
+          if [ "$OK" = "true" ]; then
+            gh issue close "$NUMBER" --repo "$GITHUB_REPOSITORY" --comment "$(cat "$RUNNER_TEMP/result.txt")"
+          else
+            gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body "Couldn't file this: $(cat "$RUNNER_TEMP/result.txt")"
+            exit 1
+          fi
