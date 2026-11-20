@@ -1,0 +1,51 @@
+name: Profile stats
+
+# Once a day, writes harmless counts (tasks done this week, habit streaks) and a
+# quote of the day between <!-- life:start --> and <!-- life:end --> in the
+# profile README. Does nothing until the PROFILE_TOKEN secret exists: a
+# fine-grained token with Contents read/write on the profile repository only.
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for the token
+        id: token
+        env:
+          PROFILE_TOKEN: ${{ secrets.PROFILE_TOKEN }}
+        run: |
+          if [ -n "$PROFILE_TOKEN" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No PROFILE_TOKEN secret yet, so nothing to do (life-in-git README, setup step 5)."
+          fi
+      - if: steps.token.outputs.present == 'true'
+        uses: actions/checkout@v4
+      - if: steps.token.outputs.present == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: mteyra/life-in-git
+          path: .engine
+      - if: steps.token.outputs.present == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/${{ github.repository_owner }}
+          token: ${{ secrets.PROFILE_TOKEN }}
+          path: .profile
+      - if: steps.token.outputs.present == 'true'
+        name: Update the profile
+        run: |
+          python3 .engine/life.py --dir . profile .profile/README.md
+          cd .profile
+          # A bot commit: automated stats shouldn't count as your own activity.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --cached --quiet || { git commit -q -m "Update life stats" && git push -q; }
